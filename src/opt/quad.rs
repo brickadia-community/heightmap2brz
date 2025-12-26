@@ -318,6 +318,7 @@ impl QuadTree {
                             player: !options.nocollide,
                             weapon: !options.nocollide,
                             interact: !options.nocollide,
+                            tool: !options.nocollide,
                             ..Default::default()
                         },
                         color: Color {

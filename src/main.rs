@@ -4,7 +4,8 @@ pub mod util;
 
 use crate::{map::*, opt::*, util::*};
 use brdb::assets::bricks::{
-    PB_DEFAULT_BRICK, PB_DEFAULT_MICRO_BRICK, PB_DEFAULT_STUDDED, PB_DEFAULT_TILE,
+    PB_DEFAULT_BRICK, PB_DEFAULT_MICRO_BRICK, PB_DEFAULT_SMOOTH_TILE, PB_DEFAULT_STUDDED,
+    PB_DEFAULT_TILE,
 };
 use clap::clap_app;
 use env_logger::Builder;
@@ -28,6 +29,7 @@ fn main() {
         (@arg size: -s --size +takes_value "Brick stud size (default 1)")
         (@arg cull: --cull "Automatically remove bottom level bricks and fully transparent bricks")
         (@arg tile: --tile "Render bricks as tiles")
+        (@arg smooth: --smooth "Render bricks as smooth tiles")
         (@arg micro: --micro "Render bricks as micro bricks")
         (@arg stud: --stud "Render bricks as stud cubes")
         (@arg snap: --snap "Snap bricks to the brick grid")
@@ -56,21 +58,30 @@ fn main() {
         .to_string();
 
     // output options
-    let mut options = GenOptions {
+    let options = GenOptions {
         size: matches
             .value_of("size")
             .unwrap_or("1")
             .parse::<u16>()
             .expect("Size must be integer")
-            * 5,
+            * if matches.is_present("micro") { 1 } else { 5 },
         scale: matches
             .value_of("vertical")
             .unwrap_or("1")
             .parse::<u32>()
             .expect("Scale must be integer"),
         cull: matches.is_present("cull"),
-        asset: PB_DEFAULT_BRICK,
-        tile: matches.is_present("tile"),
+        asset: if matches.is_present("micro") {
+            PB_DEFAULT_MICRO_BRICK
+        } else if matches.is_present("tile") {
+            PB_DEFAULT_TILE
+        } else if matches.is_present("smooth") {
+            PB_DEFAULT_SMOOTH_TILE
+        } else if matches.is_present("stud") {
+            PB_DEFAULT_STUDDED
+        } else {
+            PB_DEFAULT_BRICK
+        },
         micro: matches.is_present("micro"),
         stud: matches.is_present("stud"),
         snap: matches.is_present("snap"),
@@ -82,16 +93,6 @@ fn main() {
         quadtree: true,
         greedy: matches.is_present("greedy"),
     };
-
-    if options.tile {
-        options.asset = PB_DEFAULT_TILE;
-    } else if options.micro {
-        options.size /= 5;
-        options.asset = PB_DEFAULT_MICRO_BRICK;
-    }
-    if options.stud {
-        options.asset = PB_DEFAULT_STUDDED;
-    }
 
     info!("Reading image files");
 

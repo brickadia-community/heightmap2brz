@@ -7,7 +7,6 @@ pub struct GenOptions {
     pub scale: u32,
     pub asset: BString,
     pub cull: bool,
-    pub tile: bool,
     pub micro: bool,
     pub stud: bool,
     pub snap: bool,

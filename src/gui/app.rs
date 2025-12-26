@@ -11,7 +11,7 @@ use std::{
 use super::logger;
 use crate::{gui::util::maps_from_files, opt::*, util::bricks_to_save, util::*};
 use brdb::assets::bricks::{
-    PB_DEFAULT_BRICK, PB_DEFAULT_MICRO_BRICK, PB_DEFAULT_STUDDED, PB_DEFAULT_TILE,
+    PB_DEFAULT_BRICK, PB_DEFAULT_MICRO_BRICK, PB_DEFAULT_SMOOTH_TILE, PB_DEFAULT_STUDDED,
 };
 use eframe::App;
 use egui::{
@@ -26,6 +26,7 @@ use std::path::Path;
 enum BrickMode {
     Default,
     Tile,
+    SmoothTile,
     Stud,
     Micro,
 }
@@ -55,6 +56,7 @@ pub struct HeightmapApp {
     opt_snap: bool,
     opt_glow: bool,
     mode: BrickMode,
+    always_on_top: bool,
     progress: Progress,
     progress_channel: (Sender<Progress>, Receiver<Progress>),
     promise: Option<Promise<Result<(), String>>>,
@@ -79,6 +81,7 @@ impl Default for HeightmapApp {
             opt_glow: false,
             opt_hdmap: false,
             mode: BrickMode::Micro,
+            always_on_top: false,
             promise: None,
             progress: ("Pending", 0.),
             progress_channel: mpsc::channel(),
@@ -102,13 +105,21 @@ impl HeightmapApp {
     }
 
     fn options(&self) -> GenOptions {
-        // output options
-        let mut options = GenOptions {
-            size: self.horizontal_size * 5,
+        GenOptions {
+            size: if self.mode == BrickMode::Micro {
+                self.horizontal_size
+            } else {
+                self.horizontal_size * 5
+            },
             scale: self.vertical_scale,
             cull: self.opt_cull,
-            asset: PB_DEFAULT_BRICK,
-            tile: self.mode == BrickMode::Tile,
+            asset: match self.mode {
+                BrickMode::Default => PB_DEFAULT_BRICK,
+                BrickMode::Tile => PB_DEFAULT_BRICK,
+                BrickMode::SmoothTile => PB_DEFAULT_SMOOTH_TILE,
+                BrickMode::Stud => PB_DEFAULT_STUDDED,
+                BrickMode::Micro => PB_DEFAULT_MICRO_BRICK,
+            },
             micro: self.mode == BrickMode::Micro,
             stud: self.mode == BrickMode::Stud,
             snap: self.opt_snap,
@@ -119,19 +130,7 @@ impl HeightmapApp {
             nocollide: self.opt_nocollide,
             quadtree: self.optimization == OptimizationMode::Quad,
             greedy: self.optimization == OptimizationMode::Greedy,
-        };
-
-        if options.tile {
-            options.asset = PB_DEFAULT_TILE;
-        } else if options.micro {
-            options.size /= 5;
-            options.asset = PB_DEFAULT_MICRO_BRICK;
         }
-        if options.stud {
-            options.asset = PB_DEFAULT_STUDDED;
-        }
-
-        options
     }
 
     fn run_converter(&mut self) {
@@ -271,10 +270,25 @@ impl HeightmapApp {
         });
     }
 
-    fn draw_header(&self, ui: &mut Ui) {
+    fn draw_header(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
             ui.heading("heightmap2brz");
             ui.label(format!("v{}", env!("CARGO_PKG_VERSION")));
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if ui
+                    .checkbox(&mut self.always_on_top, "Always on top")
+                    .changed()
+                {
+                    ui.ctx()
+                        .send_viewport_cmd(egui::ViewportCommand::WindowLevel(
+                            if self.always_on_top {
+                                egui::WindowLevel::AlwaysOnTop
+                            } else {
+                                egui::WindowLevel::Normal
+                            },
+                        ));
+                }
+            });
         });
         ui.hyperlink("https://github.com/brickadia-community/heightmap2brz");
         ui.label(
@@ -370,6 +384,8 @@ impl HeightmapApp {
                         .on_hover_text("Use default bricks");
                     ui.radio_value(&mut self.mode, BrickMode::Tile, "Tile")
                         .on_hover_text("Use tile bricks");
+                    ui.radio_value(&mut self.mode, BrickMode::SmoothTile, "Smooth")
+                        .on_hover_text("Use smooth tile bricks");
                     ui.radio_value(&mut self.mode, BrickMode::Stud, "Stud")
                         .on_hover_text("Use studded bricks");
                     ui.radio_value(&mut self.mode, BrickMode::Micro, "Micro")
