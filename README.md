@@ -1,5 +1,7 @@
 # Heightmap2BRZ
 
+This tool functions as an img2brz, img2text, and heightmap2brz
+
 [Download here](https://github.com/Meshiest/heightmap2brz/releases)
 
 ![Example output](https://i.imgur.com/QdPLN09.png)
@@ -18,32 +20,40 @@ Compile or download from releases.
 
 `heightmap.exe --help` for usage instructions:
 
-    USAGE:
-        heightmap.exe [FLAGS] [OPTIONS] <INPUT>...
+USAGE:
+    heightmap.exe [FLAGS] [OPTIONS] <INPUT>...
 
-    FLAGS:
-            --cull         Automatically remove bottom level bricks and fully transparent bricks
-            --glow         Make the heightmap glow at 0 intensity
-            --greedy       Use greedy optimization
-        -h, --help         Prints help information
-            --hdmap        Using a high detail rgb color encoded heightmap
-        -i, --img          Make the heightmap flat and render an image
-            --lrgb         Use linear rgb input color instead of sRGB
-            --micro        Render bricks as micro bricks
-            --nocollide    Disable brick collision
-            --snap         Snap bricks to the brick grid
-            --stud         Render bricks as stud cubes
-            --tile         Render bricks as tiles
-        -V, --version      Prints version information
+FLAGS:
+        --cull         Automatically remove bottom level bricks and fully transparent bricks
+        --glow         Make the heightmap glow at 0 intensity
+        --greedy       Use greedy optimization
+    -h, --help         Prints help information
+        --hdmap        Using a high detail rgb color encoded heightmap
+    -i, --img          Make the heightmap flat and render an image
+        --lrgb         Use linear rgb input color instead of sRGB
+        --micro        Render bricks as micro bricks
+        --nocollide    Disable brick collision
+        --smooth       Render bricks as smooth tiles
+        --snap         Snap bricks to the brick grid
+        --stud         Render bricks as stud cubes
+        --text         Render the input image as TextDisplay component bricks
+        --tile         Render bricks as tiles
+    -V, --version      Prints version information
 
-    OPTIONS:
-        -c, --colormap <colormap>    Input colormap image (PNG/JPG)
-        -o, --output <output>        Output file (BRDB, BRZ)
-        -s, --size <size>            Brick stud size (default 1)
-        -v, --vertical <vertical>    Vertical scale multiplier (default 1)
+OPTIONS:
+        --alpha-threshold <alphathreshold>    Text mode: alpha below this is transparent (default 128)
+        --char-repeat <charrepeat>            Text mode: glyphs emitted per pixel (default 2)
+    -c, --colormap <colormap>                 Input colormap image (PNG/JPG)
+        --empty-char <emptychar>              Text mode: glyph for transparent pixels (default space)
+        --fill-char <fillchar>                Text mode: glyph for opaque pixels (default █)
+        --font <font>                         Text mode: font preset (monaspace, iosevka, orbitron; default monaspace)
+        --line-height-world <lineheight>      Text mode: world units per pixel row / pixel size (default 1)
+    -o, --output <output>                     Output file (BRDB, BRZ)
+    -s, --size <size>                         Brick stud size (default 1)
+    -v, --vertical <vertical>                 Vertical scale multiplier (default 1)
 
-    ARGS:
-        <INPUT>...    Input heightmap image files (PNG/JPG)
+ARGS:
+    <INPUT>...    Input heightmap image files (PNG/JPG)
 
 ###  Examples
 

@@ -5,6 +5,51 @@ use crate::{
     util::{GenOptions, file_ext},
 };
 
+/// Copy the output file's absolute path to the OS clipboard as a file list so
+/// it can be pasted directly into Brickadia.
+pub fn copy_path_to_clipboard(out_file: &str) -> Result<(), String> {
+    let mut full_path = std::path::Path::new(out_file)
+        .canonicalize()
+        .unwrap_or_else(|_| PathBuf::from(out_file))
+        .to_string_lossy()
+        .to_string();
+
+    // lowercase the first letter
+    full_path.get_mut(0..1).map(|s| s.make_ascii_lowercase());
+
+    #[cfg(target_os = "windows")]
+    {
+        clipboard_win::raw::open().map_err(|e| format!("failed to open clipboard: {e}"))?;
+        let set = clipboard_win::raw::set_file_list(&[full_path.clone()])
+            .map_err(|e| format!("failed to set clipboard: {e}"));
+        let close =
+            clipboard_win::raw::close().map_err(|e| format!("failed to close clipboard: {e}"));
+        set?;
+        close?;
+        log::info!("Wrote path {full_path} to clipboard");
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        log::info!("Clipboard file path support is only available on Windows");
+        log::info!("File saved to: {}", full_path);
+    }
+
+    Ok(())
+}
+
+/// Small square thumbnail for an image file path.
+pub fn thumb(ui: &mut egui::Ui, image: &PathBuf) {
+    ui.add(
+        egui::Image::new(egui::ImageSource::Uri(std::borrow::Cow::from(format!(
+            "file://{}",
+            image.display().to_string().replace("\\", "/")
+        ))))
+        .fit_to_exact_size(egui::vec2(32.0, 32.0))
+        .maintain_aspect_ratio(false),
+    );
+}
+
 type MapPair = (Box<dyn Heightmap>, Box<dyn Colormap>);
 
 pub fn maps_from_files(

@@ -64,3 +64,20 @@ pub fn bricks_to_save(bricks: Vec<Brick>) -> World {
 pub fn file_ext(filename: &PathBuf) -> Option<&str> {
     filename.extension().and_then(OsStr::to_str)
 }
+
+// write a world to a .brz or .brdb file based on the extension
+pub fn write_world(world: &World, out_file: &str) -> Result<(), String> {
+    if out_file.to_lowercase().ends_with(".brz") {
+        let brz = world
+            .to_brz_vec()
+            .map_err(|e| format!("failed to encode brz: {e}"))?;
+        std::fs::write(out_file, brz).map_err(|e| format!("failed to write file: {e}"))?;
+    } else if out_file.to_lowercase().ends_with(".brdb") {
+        world
+            .write_brdb(out_file)
+            .map_err(|e| format!("failed to write file: {e}"))?;
+    } else {
+        return Err("output file must end with .brz or .brdb".to_string());
+    }
+    Ok(())
+}
