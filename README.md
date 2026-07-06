@@ -20,6 +20,7 @@ Compile or download from releases.
 
 `heightmap.exe --help` for usage instructions:
 
+```
 USAGE:
     heightmap.exe [FLAGS] [OPTIONS] <INPUT>...
 
@@ -54,6 +55,7 @@ OPTIONS:
 
 ARGS:
     <INPUT>...    Input heightmap image files (PNG/JPG)
+```
 
 ###  Examples
 
