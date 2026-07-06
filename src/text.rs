@@ -861,9 +861,16 @@ pub fn add_text_tiles(world: &mut World, tiles: Vec<TextTile>, opts: &TextOption
     for tile in tiles {
         let kx = max_kx - (tile.start_col / tile_px) as i32;
         let ky = max_ky - (tile.start_row / tile_px) as i32;
-        let y = (kx as f32 * step_true_x).round() as i32;
+        let y_exact = kx as f32 * step_true_x;
+        let z_exact = ky as f32 * step_true_z;
+        let y = y_exact.round() as i32;
         // bottom tile row anchors at z=1; rows above it proportionally higher
-        let z_tile = 1 + (ky as f32 * step_true_z).round() as i32;
+        let z_tile = 1 + z_exact.round() as i32;
+        // brick positions are integers; at tiny tile spans the rounding
+        // residue (≤0.5 units) is a visible fraction of a tile, so the text
+        // compensates it (offsets are world units on all axes)
+        let res_y = y as f32 - y_exact;
+        let res_z = (z_tile - 1) as f32 - z_exact;
         for band in tile.bands {
             // take the shallowest free depth slot at this in-plane spot
             let mut depth = 0;
@@ -873,16 +880,19 @@ pub fn add_text_tiles(world: &mut World, tiles: Vec<TextTile>, opts: &TextOption
                 depth += BRICK_STACK_STEP;
             }
             placed.push(Position::new(depth, y, z_tile));
-            pending.push((band, y, z_tile, depth));
+            pending.push((band, y, z_tile, depth, res_y, res_z));
         }
     }
-    let max_depth = pending.iter().map(|(_, _, _, d)| *d).max().unwrap_or(0);
+    let max_depth = pending.iter().map(|(_, _, _, d, _, _)| *d).max().unwrap_or(0);
     let mut bricks = Vec::new();
     let mut ids = Vec::new();
-    for (band, y, z_tile, depth) in pending {
+    for (band, y, z_tile, depth, res_y, res_z) in pending {
         let offset = Vector3f {
-            x: opts.offset_x,
-            y: opts.offset_y,
+            // cube rounded toward +Y (image-left) pulls its text back right
+            // (local +X = world -Y)
+            x: opts.offset_x + res_y,
+            // cube rounded upward pulls its text back down
+            y: opts.offset_y - res_z,
             // text comes forward by the cube's distance behind the front
             // plane (all offset axes share the same world units)
             z: opts.offset_z + depth as f32,
