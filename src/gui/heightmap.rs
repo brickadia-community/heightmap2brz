@@ -273,6 +273,9 @@ impl HeightmapApp {
                 ui.label("Save Destination")
                     .on_hover_text("The save will be created relative to the location of the exe.");
                 ui.horizontal(|ui| {
+                    // the clipboard flag is meaningless on web (saves are
+                    // delivered as browser downloads)
+                    #[cfg(not(target_arch = "wasm32"))]
                     ui.checkbox(&mut shared.out_clipboard, "Copy to clipboard")
                         .on_hover_text("Copy the save file path to clipboard after generation");
 
